@@ -1,69 +1,77 @@
-import Image from "next/image";
+'use client'
+import AccessibilityBar from '@/components/AccessibilityBar'
+import SHAChecker from '@/components/SHAChecker'
+import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
+import Link from 'next/link'
 
 export default function Home() {
+  const [search, setSearch] = useState('')
+  const [hospitals, setHospitals] = useState<any[]>([])
+  const [problems, setProblems] = useState<any[]>([])
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    async function load() {
+      const { data: hData, error: hErr } = await supabase.from('hospitals').select('*').limit(4)
+      if (hErr) setError(hErr.message)
+      else setHospitals(hData || [])
+      
+      const { data: pData } = await supabase.from('problems').select('*').limit(5)
+      setProblems(pData || [])
+    }
+    load()
+  }, [])
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="max-w-md mx-auto bg-gray-50 min-h-screen">
+      <AccessibilityBar />
+      <div className="p-4 bg-white">
+        <h1 className="text-xl font-bold">Quality Health Care for Everyone, Everywhere</h1>
+        <p className="text-xs text-gray-500 mt-1">Adults | Children | Disabilities — SHA + M-Pesa — All Diseases</p>
+
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search malaria, toothache, eye, mama..." className="w-full border p-3 rounded-xl mt-4 text-sm" />
+
+        <div className="mt-4"><SHAChecker /></div>
+
+        <div className="mt-4">
+          <h2 className="font-bold text-sm">Hospitals Near You — Keroka</h2>
+          {error && <p className="text-xs text-red-500">{error}</p>}
+          {hospitals.length > 0 ? hospitals.map((h) => (
+            <div key={h.id} className="border p-3 rounded-xl mt-2 flex justify-between">
+              <div>
+                <p className="font-bold text-sm">{h.name || h.name_en || h.hospital_name || 'Hospital'}</p>
+                <p className="text-xs text-gray-500">{h.county || h.location || h.sub_county || ''} — ⭐ {h.rating || '4.5'}</p>
+                <p className="text-[10px]">Paybill {h.paybill || '200222'}</p>
+              </div>
+              <Link href="/hospitals" className="text-blue-600 text-xs">Book ›</Link>
+            </div>
+          )) : <p className="text-xs text-red-500 mt-2">Loading hospitals from Supabase... {hospitals.length} found. Check console F12</p>}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <div className="mt-4">
+          <h2 className="font-bold text-sm">Common Problems — With KSL Video</h2>
+          {problems.map((p) => (
+            <div key={p.id} className="border p-3 rounded-xl mt-2">
+              <p className="font-bold text-sm">{p.icon || '🩺'} {p.name_en || p.name}</p>
+              <p className="text-xs text-gray-500">{p.description_en || p.description || ''}</p>
+            </div>
+          ))}
         </div>
-      </main>
+
+        <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-xl">
+          <p className="text-xs font-bold">📺 AdMob Banner — Video Education — Earn</p>
+        </div>
+        <div className="mt-4 p-3 bg-gray-900 text-white rounded-xl">
+          <p className="text-xs font-bold">M-Pesa: Paybill 200222 / Till 000000</p>
+          <p className="text-[10px]">Owner: +254795682865 — jacksonkinuthia347@gmail.com</p>
+        </div>
+        <div className="h-20"></div>
+      </div>
+
+      <div className="fixed bottom-0 w-full max-w-md bg-white border-t flex justify-around p-3 text-xs">
+        <span className="text-blue-600">🏠 Home</span><span>📷 Scan</span><span>👤 Profile</span>
+      </div>
     </div>
-  );
+  )
 }
